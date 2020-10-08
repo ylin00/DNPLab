@@ -11,40 +11,52 @@ on:
     branches: [ master, develop ]
 
 jobs:
-  build-unix:
+  build:
+    
     runs-on: ${{ matrix.os }}
+    
     strategy:
       fail-fast: true 
       matrix:
         os: [ubuntu-16.04, ubuntu-latest, windows-latest]
         python-version: [3.6, 3.8]
+        
     steps:
+    
     - uses: actions/checkout@v2
+    
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+    
     - uses: actions/cache@v1
+      # If the content of the requirements.txt is not changed, use cached dependencies (may not be the latest).
+      # To use the latest dependencies, update the requirements.txt e.g. "package>=1.15". 
       id: cache
       with:
-        path: .cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-    - name: Install Dependencies
+        path: ${{ env.pythonLocation }}/lib
+        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+    
+    - name: Install Dependencies and Caching Them
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
+        echo "Installing dependencies and caching them."
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        
+    # The following step will be used in the future
 #     - name: Lint with flake8
 #       run: |
 #         # stop the build if there are Python syntax errors or undefined names
 #         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 #         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
 #         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
     - name: Test with unittest
       run: |
         python -m unittest
+        
     - name: Check PEP-8 format for code consistency
       run: |
         black dnplab --check 
