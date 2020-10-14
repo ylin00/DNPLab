@@ -121,6 +121,11 @@ python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 python -m black .
 ```
 
+Finally run the following to make sure the examples in the documentation is not broken
+```
+cd docs ; make clean; make html | grep error ; cd ..
+```
+
 After all done. Commit your changes following
 [pandas: committing your code](https://pandas.pydata.org/pandas-docs/stable/development/contributing.html#committing-your-code)
 
@@ -143,6 +148,17 @@ accept or provide revising comments.
 
 ## Contributing to documentation
 
+### Building existing documentation
+
+Run the following to build  
+```
+cd docs/
+make clean
+make html
+```
+And the html files can be examined at `docs/build/index.html`
+
+### Commiting changes and pull requests
 
 ## License
 By contributing, you agree that your contributions will be licensed under its MIT License.
