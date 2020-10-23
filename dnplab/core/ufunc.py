@@ -1,73 +1,29 @@
-import defaults
-import nddata
 import numpy as np
 
+from . import nddata
 
-# FIXME: the function below appears to be used nowhere else in the package. Please drop it.
-def fourier_transform(data, proc_parameters):
-    """Perform Fourier Transform down dim dimension given in proc_parameters
+# Boolean, unsigned integer, signed integer, float, complex.
+_NUMERIC_KINDS = set("buifc")
 
-    .. Note::
-        Assumes dt = t[1] - t[0]
 
-    Args:
-        data (nddata): Data container
-        proc_parameters (dict, procParam): Processing parameters
+def is_numeric_vector(array):
+    """Determine whether the argument has a numeric datatype, when
+    converted to a NumPy array.
 
-    Returns:
-        nddata: Fourier Transformed data
+    Booleans, unsigned integers, signed integers, floats and complex
+    numbers are the kinds of numeric datatype.
 
-    Example:
+    Parameters
+    ----------
+    array : array-like
+        The array to check.
 
-    .. code-block:: python
+    Returns
+    -------
+    is_numeric_vector : `bool`
+        True if the array has a numeric datatype, False if not.
 
-        proc_parameters['dim'] = 't'
-        proc_parameters['zero_fill_factor'] = 2
-        proc_parameters['shift'] = True
-        proc_parameters['convert_to_ppm'] = True
-
-        all_data = dnplab.dnpNMR.fourier_transform(all_data, proc_parameters)
     """
-
-    required_parameters = defaults._fourier_transform
-
-    # Add required parameters to proc_parameters
-    print(required_parameters)
-    for key in required_parameters:
-        if key not in proc_parameters:
-            proc_parameters[key] = required_parameters[key]
-    #
-    dim = proc_parameters["dim"]
-    zero_fill_factor = proc_parameters["zero_fill_factor"]
-    shift = proc_parameters["shift"]
-    convert_to_ppm = proc_parameters["convert_to_ppm"]
-
-    index = data.dims.index(dim)
-    dt = data.coords[index][1] - data.coords[index][0]
-
-    n_pts = zero_fill_factor * len(data.coords[index])
-    f = (1.0 / (n_pts * dt)) * np.r_[0:n_pts]
-
-    if shift == True:
-        f -= 1.0 / (2 * dt)
-
-    data.values = np.fft.fft(data.values, n=n_pts, axis=index)
-    if shift:
-        data.values = np.fft.fftshift(data.values, axes=index)
-    data.coords[index] = f
-
-    return data
-
-
-if __name__ == "__main__":
-    x = np.r_[0:10]
-    y = np.r_[0:20]
-    z = np.r_[0:15]
-    data = nddata.nddata_core(
-        np.array(range(len(x) * len(y) * len(z))).reshape(len(x), len(y), len(z)),
-        ["x", "y", "z"],
-        [x, y, z],
+    return (
+        np.asarray(array).dtype.kind in _NUMERIC_KINDS and np.asarray(array).ndim == 1
     )
-
-    out = fourier_transform(data, {"dim": "x"})
-    print(out)
