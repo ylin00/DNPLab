@@ -1,10 +1,14 @@
 from __future__ import division
+
 import operator
-import numpy as np
 import warnings
-from copy import deepcopy
 from collections import OrderedDict
-from . import nddata_coord
+from copy import deepcopy
+from typing import Hashable, Iterable, Type, Union
+
+import numpy as np
+
+from dnplab.core import AbstractMethodError, nddata_coord
 
 _numerical_types = (np.ndarray, int, float, complex)
 
@@ -53,6 +57,14 @@ class nddata_core(object):
 
         if not self._self_consistent():
             warnings.warn("Dimensions not consistent")
+
+    @property
+    def _constructor(self):
+        """
+        Used when a manipulation result has the same dimensions as the
+        original.
+        """
+        raise AbstractMethodError(self)
 
     @property
     def __version__(self):
@@ -486,29 +498,87 @@ class nddata_core(object):
             repr(self.values), repr(self.dims), repr(self.coords), repr(self.attrs)
         )
 
-    def squeeze(self):
-        """Remove length 1 axes"""
-        a = self.copy()
-        shape = a.shape
+    def squeeze(self, dim: Union[Hashable, Iterable[Hashable], None] = None):
+        """Remove single-dimensional axes.
 
-        remove_dims = [a.dims[x] for x in range(len(shape)) if shape[x] == 1]
-        values = np.squeeze(a.values)
+        Args:
+            dim : None or Hashable or iterable of Hashable, optional
+                Selects a subset of the length one dimensions. If a dimension is
+                selected with length greater than one, an error is raised. If
+                None, all length one dimensions are squeezed.
 
-        if a.error is not None:
-            a.error = np.squeeze(a.error)
+        Returns:
+            squeezed : ndarray
+                The input array, but with all or a subset of the
+                dimensions of length 1 removed. This is always `a` itself
+                or a view into `a`. Note that if all axes are squeezed,
+                the result is a 0d array and not a scalar.
 
-        attrs = a.attrs
+        Raises:
+            ValueError
+                If `axis` or `dim` is not None, and an axis being squeezed is not of
+                length 1
 
-        for dim in remove_dims:
-            out = a.coords.pop(dim)
-            if dim not in attrs:
-                attrs[dim] = np.array(out)
-            else:
-                warnings.warn(
-                    "Attribute lost {}:{}".format(lost_dims[ix], lost_coords[ix])
+        See Also:
+            numpy.squeeze
+            xarray.squeeze
+
+        Examples:
+        >>> import dnplab as dnp
+        >>> x = dnp.dnpdata(np.array([[[0], [1], [2]]]), dims=["x", "y", "z"])
+        >>> x.shape
+        (1, 3, 1)
+        >>> x.squeeze().shape
+        (3,)
+        >>> x.squeeze(dim="x").shape
+        (3, 1)
+        >>> x.squeeze(dim="y").shape
+        Traceback (most recent call last):
+        ...
+        ValueError: cannot select an axis to squeeze out which has size not equal to one
+        >>> x.squeeze(dim="z").shape
+        (1, 3)
+        >>> x = dnpdata(np.array([[1234]]), dims=["x", "y"])
+        >>> x.shape
+        (1, 1)
+        >>> x.squeeze()
+        array(1234)  # 0d array
+        >>> x.squeeze().shape
+        ()
+        >>> x.squeeze()[()]
+        1234
+
+        """
+        if dim is None:
+            squeezed_dims = [self.dims[i] for i, d in enumerate(self.shape) if d == 1]
+        elif isinstance(dim, Iterable) and not isinstance(dim, str):
+            squeezed_dims = list(dim)
+        elif isinstance(dim, str):
+            squeezed_dims = [dim]
+        else:
+            raise TypeError("dim must be None or Hashable or iterable of Hashable")
+
+        # check all squeezed dims have length of 1 else raise error
+        remaining_dims = self.dims.copy()
+        for dim in squeezed_dims:
+            if self.shape[self.index(dim)] > 1:
+                raise ValueError(
+                    "cannot select an dimension to squeeze out which has size "
+                    "not equal to one"
                 )
+            remaining_dims.remove(dim)
 
-        return a
+        squeezed_axes = [self.index(dim) for dim in squeezed_dims]
+
+        # take care of values, error, coords and attrs
+        return self._constructor(
+            values=self.values.squeeze(axis=squeezed_axes),
+            error=self.error.squeeze(axis=squeezed_axes)
+            if self.error is not None
+            else None,
+            coords=self.coords[remaining_dims],
+            attrs=self.attrs,
+        )
 
     def chunk(self, dim, new_dims, new_sizes):
         """
