@@ -97,7 +97,7 @@ def mr_properties(nucleus, *args):
 
     elif len(args) == 2:
 
-        if args[1] == True:
+        if args[1]:
             print(" ")
             print("Nucleus                    : ", nucleus)
             print("Spin                       : ", gmrProperties.get(nucleus)[0])
@@ -177,7 +177,7 @@ def show_dnp_properties(radical, mwFrequency, dnpNucleus):
     gmr_e = mr_properties("0e")
     AisoT = AisoMHz / gmr_e / 2 / np.pi
 
-    if nucleus != None:
+    if nucleus is not None:
         nucSpin = mr_properties(nucleus, "spin")
         n = 2 * nucSpin + 1
         ms = np.linspace(-1.0 * nucSpin, nucSpin, int(n))
