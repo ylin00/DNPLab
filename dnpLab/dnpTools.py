@@ -4,7 +4,7 @@ Collection of tools and functions useful to process DNP-NMR data
 
 import numpy as np
 
-from .mrProperties import gmrProperties, radicalProperties
+from dnplab.mrProperties import gmrProperties, radicalProperties
 
 
 def mr_properties(nucleus, *args):
