@@ -6,8 +6,7 @@ from . import (
     dnpIO,
     dnpNMR,
     dnpResults,
-    dnpTools,
-    hydrationGUI,
+    dnpTools
 )
 
 # before raising the functions below in the sub-modules to the module
