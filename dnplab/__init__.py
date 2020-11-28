@@ -1,12 +1,15 @@
-# import odnpData
-from .dnpData import dnpdata, dnpdata_collection, create_workspace
-from . import dnpNMR
-from .dnpImport import load
-from . import dnpIO
-from . import dnpFit
-from . import dnpHydration
-from . import hydrationGUI
-from . import core
-from . import dnpResults
+# sub-modules should be imported first
+from . import (
+    core,
+    dnpFit,
+    dnpHydration,
+    dnpIO,
+    dnpNMR,
+    dnpResults,
+    dnpTools
+)
+
+# before raising the functions below in the sub-modules to the module
+from .dnpData import create_workspace, dnpdata, dnpdata_collection
 from .dnpImport import load
 from .version import __version__
